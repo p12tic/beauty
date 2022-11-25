@@ -43,12 +43,12 @@ route::extract_route_info()
         if (segment[0] == ':') {
             _route_info.route_parameters.push_back(
                     beauty::route_parameter{
-                            .name = segment.data() + 1,
-                            .in = "path",
-                            .description = "Undefined",
-                            .type = "Undefined",
-                            .format = "",
-                            .required = true
+                            segment.data() + 1,
+                            "path",
+                            "Undefined",
+                            "Undefined",
+                            "",
+                            true
                     });
         }
     }
