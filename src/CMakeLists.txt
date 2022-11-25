@@ -62,7 +62,6 @@ if(UNIX)
         PRIVATE
             LINUX
             UNIX
-            _FORTIFY_SOURCE=2
     )
     set_target_properties(beauty
         PROPERTIES
@@ -85,10 +84,19 @@ target_include_directories(beauty
         $<INSTALL_INTERFACE:include>
 )
 
-target_link_libraries(beauty
-    PUBLIC
-        Boost::boost
-)
+if (EXISTS "/etc/debian_version")
+    target_link_libraries(beauty
+        PUBLIC
+            Boost::boost
+    )
+else()
+    target_link_libraries(beauty PUBLIC boost_system)
+    target_compile_definitions(beauty
+        PUBLIC
+            BEAUTY_USE_OLD_BOOST=1
+    )
+endif()
+
 if (BEAUTY_ENABLE_OPENSSL)
     target_link_libraries(beauty
         PUBLIC

@@ -4,7 +4,9 @@
 #include <beauty/version.hpp>
 #include <beauty/utils.hpp>
 #include <beauty/exception.hpp>
+#if !BEAUTY_USE_OLD_BOOST
 #include <beauty/websocket_session.hpp>
+#endif
 
 #include <boost/beast.hpp>
 #include <boost/asio.hpp>
@@ -30,15 +32,23 @@ template<bool SSL>
 class session : public std::enable_shared_from_this<session<SSL>>
 {
 public:
+#if BEAUTY_USE_OLD_BOOST
+    using stream_type = void*;
+#else
     using stream_type = std::conditional_t<SSL,
             asio::ssl::stream<asio::ip::tcp::socket&>,
             void*>;
+#endif
 
 public:
     template<bool U = SSL, typename std::enable_if_t<!U, int> = 0>
     session(asio::io_context& ioc, asio::ip::tcp::socket&& socket, const beauty::router& router) :
           _socket(std::move(socket)),
+#if BEAUTY_USE_OLD_BOOST
+          _strand(asio::strand<typename asio::io_context::executor_type>(ioc.get_executor())),
+#else
           _strand(asio::make_strand(ioc)),
+#endif
           _router(router)
     {}
 
@@ -184,6 +194,7 @@ public:
     void do_close()
     {
         //std::cout << "session: do close, Shutdown the connection" << std::endl;
+#if !BEAUTY_USE_OLD_BOOST
         if constexpr(SSL) {
             // Perform the SSL shutdown
             _stream.async_shutdown(
@@ -193,6 +204,9 @@ public:
                         me->on_ssl_shutdown(ec);
                     }));
         } else {
+#else
+        {
+#endif
             // Send a TCP shutdown
             boost::system::error_code ec;
             _socket.shutdown(asio::ip::tcp::socket::shutdown_send, ec);
@@ -205,9 +219,11 @@ public:
         if(ec)
             return fail(ec, "shutdown");
 
+#if !BEAUTY_USE_OLD_BOOST
         if constexpr(SSL) {
             _stream.lowest_layer().close();
         }
+#endif
     }
 
 private:
@@ -229,7 +245,11 @@ private:
         _request = _request_parser->release();
         _request.remote(_socket.remote_endpoint());
 
+#if BEAUTY_USE_OLD_BOOST
+        _is_websocket = false;
+#else
         _is_websocket = (beast::websocket::is_upgrade(_request));
+#endif
         //std::cout << "session: handle " << (_is_websocket ? "websocket" : "request") << ", method: " << _request.method_string() << ", target: " << _request.target() << std::endl;
 
         auto found_method = _router.find(_request.method());
@@ -243,9 +263,13 @@ private:
                 // Match will update parameters request from the URL
                 try {
                     if (_is_websocket) {
+#if BEAUTY_USE_OLD_BOOST
+                        return helper::server_error(_request, "websocket is not supported");
+#else
                         // Create a websocket session, and transferring ownership
                         std::make_shared<websocket_session>(std::move(_socket), route)->run(_request);
                         return nullptr;
+#endif
                      }
                     else {
                         auto res = std::make_shared<response>(beast::http::status::ok, _request.version());

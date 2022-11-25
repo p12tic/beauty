@@ -1,3 +1,5 @@
+#if !BEAUTY_USE_OLD_BOOST
+
 #include <beauty/client.hpp>
 
 #include <boost/system/error_code.hpp>
@@ -264,3 +266,5 @@ client::ws_send(std::string&& data)
 }
 
 }
+
+#endif

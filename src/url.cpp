@@ -3,7 +3,11 @@
 #include <beauty/utils.hpp>
 
 #include <iostream>
+#if BEAUTY_USE_OLD_BOOST
+#include <cstdlib>
+#else
 #include <charconv>
+#endif
 
 namespace {
 // --------------------------------------------------------------------------
@@ -72,10 +76,18 @@ url::url(std::string u) : _url(std::move(u))
         }
     }
     if (_port_view.size()) {
+#if BEAUTY_USE_OLD_BOOST
+        char* end = const_cast<char*>(&_port_view[0] + _port_view.size());
+        _port = std::strtoul(&_port_view[0], &end, 10);
+        if (_port == 0) {
+            throw std::runtime_error("Invalid port number " + std::string(_port_view));
+        }
+#else
         auto[p, ec] = std::from_chars(&_port_view[0],&_port_view[0] + _port_view.size(), _port);
         if (ec != std::errc()) {
             throw std::runtime_error("Invalid port number " + std::string(_port_view));
         }
+#endif
     }
 
     // [/path][?query]

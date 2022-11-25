@@ -8,7 +8,9 @@
 #include <beauty/utils.hpp>
 #include <beauty/url.hpp>
 #include <beauty/websocket_handler.hpp>
+#if !BEAUTY_USE_OLD_BOOST
 #include <beauty/websocket_client.hpp>
+#endif
 
 #include <boost/asio.hpp>
 #include <boost/beast.hpp>
