@@ -229,7 +229,7 @@ public:
     // --------------------------------------------------------------------------
     void ws(const std::string& url, ws_handler&& handler);
     void ws_connect();
-    void ws_send(std::string&& data);
+    void ws_send(std::string&& data, bool binary_mode = false);
 
 private:
     beauty::application& _app;

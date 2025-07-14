@@ -291,10 +291,10 @@ client::ws_connect()
 
 // --------------------------------------------------------------------------
 void
-client::ws_send(std::string&& data)
+client::ws_send(std::string&& data, bool binary_mode)
 {
     if (_websocket_client) {
-        _websocket_client->send(std::move(data));
+        _websocket_client->send(std::move(data), binary_mode);
     }
 }
 
